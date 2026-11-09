@@ -298,6 +298,111 @@ generate_iso() {
 }
 
 # ------------------------------------------------------------
+# Validações de pré-build (falham antes de gastar tempo no build)
+# ------------------------------------------------------------
+preflight_checks() {
+    log_step "Validações de pré-build"
+
+    local fail=0
+    local sudoers="$PROFILE_DIR/airootfs/etc/sudoers.d/deck"
+    local amdgpu="$PROFILE_DIR/airootfs/etc/modprobe.d/amdgpu.conf"
+    local service="$PROFILE_DIR/airootfs/etc/systemd/system/bc250-load-modules.service"
+    local cleanup="$PROFILE_DIR/airootfs/usr/local/bin/bc250-cleanup-target"
+    local settings_live="$PROFILE_DIR/airootfs/etc/calamares/settings.conf"
+    local settings_ref="$PROFILE_DIR/calamares/settings.conf"
+
+    # 1. Sudoers do Live: regra exata, newline final e sintaxe válida
+    if [[ ! -f "$sudoers" ]]; then
+        log_error "Sudoers do Live ausente: $sudoers"
+        fail=1
+    else
+        if ! grep -qxF 'deck ALL=(ALL:ALL) NOPASSWD: ALL' "$sudoers"; then
+            log_error "Regra esperada ausente em airootfs/etc/sudoers.d/deck"
+            fail=1
+        fi
+        if [[ "$(tail -c1 "$sudoers" | od -An -t x1 | tr -d ' \n')" != "0a" ]]; then
+            log_error "airootfs/etc/sudoers.d/deck não termina com newline (\\n)"
+            fail=1
+        fi
+        if command -v visudo >/dev/null 2>&1; then
+            if ! visudo -cf "$sudoers" >/dev/null 2>&1; then
+                log_error "Sintaxe inválida em airootfs/etc/sudoers.d/deck (visudo -cf)"
+                fail=1
+            fi
+        else
+            log_warn "visudo não encontrado; pulando validação de sintaxe do sudoers."
+        fi
+    fi
+
+    if ! grep -qF '["/etc/sudoers.d/deck"]="0:0:440"' "$PROFILE_DIR/profiledef.sh"; then
+        log_error "profiledef.sh sem a permissão 0:0:440 para /etc/sudoers.d/deck"
+        fail=1
+    fi
+
+    # 2. amdgpu: ip_block_mask
+    if [[ ! -f "$amdgpu" ]] || ! grep -qxF 'options amdgpu ip_block_mask=0xffffffff' "$amdgpu"; then
+        log_error "airootfs/etc/modprobe.d/amdgpu.conf ausente ou sem ip_block_mask=0xffffffff"
+        fail=1
+    fi
+
+    # 3. Ordem do bc250-load-modules antes do SDDM
+    if [[ ! -f "$service" ]] || ! grep -qE '^Before=.*sddm\.service' "$service"; then
+        log_error "bc250-load-modules.service sem Before=...sddm.service"
+        fail=1
+    fi
+
+    # 4. Zen2: não incluir mirrorlist x86-64-v4 (AVX-512)
+    if grep -qxF 'cachyos-v4-mirrorlist' "$PROFILE_DIR/packages.x86_64"; then
+        log_error "packages.x86_64 ainda contém cachyos-v4-mirrorlist (incompatível com Zen2)"
+        fail=1
+    fi
+
+    # 5. Configuração offline do Calamares
+    if ! diff -q "$settings_live" "$settings_ref" >/dev/null 2>&1; then
+        log_error "calamares/settings.conf e airootfs/etc/calamares/settings.conf divergem"
+        fail=1
+    fi
+
+    local conf
+    for conf in \
+        bc250-welcome.conf \
+        bc250-partition.conf \
+        bc250-unpackfs.conf \
+        bc250-cleanup-target.conf \
+        bc250-displaymanager.conf \
+        bc250-grubcfg.conf \
+        bc250-bootloader.conf \
+        bc250-services-systemd.conf; do
+        if [[ ! -f "$PROFILE_DIR/airootfs/etc/calamares/modules/$conf" ]]; then
+            log_error "Config do Calamares ausente: $conf"
+            fail=1
+        fi
+    done
+
+    if ! grep -qF 'source: "/run/archiso/airootfs"' \
+        "$PROFILE_DIR/airootfs/etc/calamares/modules/bc250-unpackfs.conf"; then
+        log_error "bc250-unpackfs.conf não aponta para /run/archiso/airootfs"
+        fail=1
+    fi
+
+    if [[ ! -f "$cleanup" ]]; then
+        log_error "Script de limpeza ausente: airootfs/usr/local/bin/bc250-cleanup-target"
+        fail=1
+    fi
+    if ! grep -qF '["/usr/local/bin/bc250-cleanup-target"]="0:0:755"' "$PROFILE_DIR/profiledef.sh"; then
+        log_error "profiledef.sh sem permissão 0:0:755 para bc250-cleanup-target"
+        fail=1
+    fi
+
+    if (( fail )); then
+        log_error "Validações de pré-build falharam. Corrija os itens acima."
+        exit 1
+    fi
+
+    log_info "Validações de pré-build OK."
+}
+
+# ------------------------------------------------------------
 # Fluxo principal
 # ------------------------------------------------------------
 main() {
@@ -311,6 +416,8 @@ main() {
     else
         log_warn "Pulando instalação de dependências (--skip-deps)."
     fi
+
+    preflight_checks
 
     # Diretório de trabalho sempre limpo para evitar builds incrementais quebrados
     clean_dir "$WORK_DIR"

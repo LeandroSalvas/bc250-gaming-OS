@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# ============================================================
+# BC-250 Gaming - limpeza do sistema instalado (Calamares offline)
+# ============================================================
+# Executado DENTRO do chroot do destino pelo módulo shellprocess,
+# logo após o unpackfs e ANTES de initcpiocfg/initcpio.
+#
+# O unpackfs copia o SquashFS pristine do Live (lowerdir). Ele não
+# contém o usuário live "deck" (criado em runtime), mas contém os
+# arquivos de configuração do ambiente Live e o /boot vazio (o
+# mkarchiso esvazia /boot). Este script remove o que é exclusivo do
+# Live e prepara o destino para o primeiro boot.
+# ============================================================
+
+set -euo pipefail
+
+log() { printf '[bc250-cleanup] %s\n' "$*"; }
+
+log "Removendo artefatos exclusivos do ambiente Live"
+
+# --- Usuário live, autologin e atalhos do instalador ---
+rm -f  /etc/sudoers.d/deck
+rm -f  /etc/sddm.conf.d/autologin.conf
+rm -f  /etc/skel/Desktop/install-system.desktop
+rm -f  /etc/skel/.config/autostart/bc250-welcome.desktop
+rmdir  /etc/skel/Desktop 2>/dev/null || true
+rmdir  /etc/skel/.config/autostart 2>/dev/null || true
+
+# --- Scripts e dados exclusivos do Live ---
+rm -f  /usr/local/bin/bc250-live-setup
+rm -f  /usr/local/bin/bc250-welcome
+rm -f  /usr/local/bin/choose-mirror
+rm -f  /usr/local/bin/Installation_guide
+rm -f  /usr/local/bin/livecd-sound
+rm -rf /usr/local/share/livecd-sound
+
+# --- Configurações exclusivas do Live ---
+rm -f  /etc/pacman-more.conf
+rm -f  /etc/mkinitcpio.conf.d/archiso.conf
+rm -f  /etc/pacman.d/hooks/*
+rm -f  /etc/ssh/sshd_config.d/10-archiso.conf
+rm -f  /etc/systemd/resolved.conf.d/archiso.conf
+rm -f  /etc/systemd/journald.conf.d/volatile-storage.conf
+rm -f  /etc/systemd/network/20-ethernet.network
+rm -f  /etc/systemd/network/20-wlan.network
+rm -f  /etc/systemd/network/20-wwan.network
+rm -f  /etc/systemd/networkd.conf.d/ipv6-privacy-extensions.conf
+
+# --- Arquivos do root usados pelo archiso ---
+rm -rf /root/.gnupg
+rm -f  /root/.automated_script.sh
+rm -f  /root/.zlogin
+
+# --- Configuração do Calamares (não deve reinstalar por cima do destino) ---
+rm -f  /etc/calamares/settings.conf
+rm -f  /etc/calamares/modules/bc250-*.conf
+
+# --- /etc/fstab: o módulo fstab do Calamares recria ---
+rm -f  /etc/fstab
+
+# ------------------------------------------------------------
+# Units, symlinks e wants exclusivos do Live
+# ------------------------------------------------------------
+log "Removendo units/systemd exclusivas do Live"
+
+rm -f /etc/systemd/system/bc250-live-setup.service
+rm -f /etc/systemd/system/choose-mirror.service
+rm -f /etc/systemd/system/pacman-init.service
+rm -f /etc/systemd/system/etc-pacman.d-gnupg.mount
+rm -f /etc/systemd/system/display-manager.service
+rm -f /etc/systemd/system/livecd-*.service
+rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf
+rmdir /etc/systemd/system/getty@tty1.service.d 2>/dev/null || true
+rm -f /etc/systemd/system/systemd-networkd-wait-online.service.d/wait-for-only-one-interface.conf
+rmdir /etc/systemd/system/systemd-networkd-wait-online.service.d 2>/dev/null || true
+
+# Aliases D-Bus do ambiente Live
+rm -f /etc/systemd/system/dbus-org.freedesktop.ModemManager1.service
+rm -f /etc/systemd/system/dbus-org.freedesktop.network1.service
+
+# Wants do Live (mantemos NetworkManager, bluetooth, resolved,
+# timesyncd e bc250-load-modules, que são úteis no destino)
+rm -f /etc/systemd/system/multi-user.target.wants/bc250-live-setup.service
+rm -f /etc/systemd/system/multi-user.target.wants/choose-mirror.service
+rm -f /etc/systemd/system/multi-user.target.wants/pacman-init.service
+rm -f /etc/systemd/system/multi-user.target.wants/sshd.service
+rm -f /etc/systemd/system/multi-user.target.wants/iwd.service
+rm -f /etc/systemd/system/multi-user.target.wants/ModemManager.service
+rm -f /etc/systemd/system/multi-user.target.wants/systemd-networkd.service
+rm -f /etc/systemd/system/multi-user.target.wants/hv_fcopy_daemon.service
+rm -f /etc/systemd/system/multi-user.target.wants/hv_kvp_daemon.service
+rm -f /etc/systemd/system/multi-user.target.wants/hv_vss_daemon.service
+rm -f /etc/systemd/system/multi-user.target.wants/vboxservice.service
+rm -f /etc/systemd/system/multi-user.target.wants/vmtoolsd.service
+rm -f /etc/systemd/system/multi-user.target.wants/vmware-vmblock-fuse.service
+rm -f /etc/systemd/system/multi-user.target.wants/livecd-talk.service
+rm -rf /etc/systemd/system/cloud-init.target.wants
+
+# Não herdar a descoberta automática de GPT do archiso (symlink para /dev/null)
+rm -f /etc/systemd/system-generators/systemd-gpt-auto-generator
+
+# Remove symlinks quebrados restantes (ex.: livecd-alsa-unmuter)
+find /etc/systemd/system -xtype l -delete
+
+# ------------------------------------------------------------
+# Kernel: o mkarchiso esvazia /boot; copiamos de /usr/lib/modules.
+# Precisa acontecer ANTES do módulo initcpio (preset ALL_kver).
+# ------------------------------------------------------------
+log "Copiando kernel(ns) para /boot"
+for moddir in /usr/lib/modules/*/; do
+    [[ -r "${moddir}vmlinuz" ]] || continue
+    pkgbase="$(cat "${moddir}pkgbase" 2>/dev/null || true)"
+    [[ -n "${pkgbase}" ]] || continue
+    install -Dm644 "${moddir}vmlinuz" "/boot/vmlinuz-${pkgbase}"
+    log "  /boot/vmlinuz-${pkgbase}"
+done
+
+# ------------------------------------------------------------
+# Shell do root: o perfil Live usa /usr/bin/zsh, que não é instalado.
+# ------------------------------------------------------------
+if [[ "$(getent passwd root | cut -d: -f7)" != "/bin/bash" ]]; then
+    usermod -s /bin/bash root
+    log "Shell do root ajustado para /bin/bash"
+fi
+
+# ------------------------------------------------------------
+# Keyring do pacman: o build usa SigLevel=Never e o Live inicializa
+# o keyring em runtime (overlay). O destino precisa do keyring próprio.
+# ------------------------------------------------------------
+log "Recriando keyring do pacman (archlinux + cachyos)"
+rm -rf /etc/pacman.d/gnupg
+pacman-key --init
+pacman-key --populate archlinux cachyos
+
+# ------------------------------------------------------------
+# DNS via systemd-resolved
+# ------------------------------------------------------------
+ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+
+# ------------------------------------------------------------
+# Auto-remoção (o shellprocess já leu o script)
+# ------------------------------------------------------------
+rm -f /usr/local/bin/bc250-cleanup-target
+log "Limpeza concluída"

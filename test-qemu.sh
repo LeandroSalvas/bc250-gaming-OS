@@ -43,6 +43,24 @@ if ! command -v qemu-system-x86_64 >/dev/null 2>&1; then
     exit 1
 fi
 
+if ! command -v qemu-img >/dev/null 2>&1; then
+    log_error "qemu-img não encontrado."
+    log_error "Instale com: sudo pacman -S --needed qemu-full edk2-ovmf"
+    exit 1
+fi
+
+# ------------------------------------------------------------
+# Disco virtual (necessário para testar a instalação offline)
+# ------------------------------------------------------------
+DISK="${BC250_QEMU_DISK:-$PROFILE_DIR/.build/qemu/bc250-test.qcow2}"
+if [[ ! -f "$DISK" ]]; then
+    mkdir -p "$(dirname "$DISK")"
+    log_info "Criando disco de teste: $DISK (24G)"
+    qemu-img create -f qcow2 "$DISK" 24G >/dev/null
+else
+    log_info "Usando disco de teste existente: $DISK"
+fi
+
 # ------------------------------------------------------------
 # Aceleração
 # ------------------------------------------------------------
@@ -93,6 +111,7 @@ fi
 
 log_info "=========================================="
 log_info " ISO:      $ISO"
+log_info " Disco:    $DISK (24G, virtio)"
 log_info " Memória:  4G"
 log_info " CPUs:     4"
 log_info " Saída:    Ctrl+A, X para encerrar (console) / feche a janela"
@@ -105,7 +124,8 @@ exec qemu-system-x86_64 \
     -smp 4 \
     -cdrom "$ISO" \
     -boot d \
-    -vga std \
+    -drive file="$DISK",if=virtio,format=qcow2 \
+    -device virtio-vga \
     "${DISPLAY_ARGS[@]}" \
     -usb \
     -device usb-tablet \

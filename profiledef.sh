@@ -29,6 +29,7 @@ file_permissions=(
   ["/usr/local/bin/bc250-live-setup"]="0:0:755"
   ["/usr/local/bin/bc250-load-modules"]="0:0:755"
   ["/usr/local/bin/bc250-welcome"]="0:0:755"
+  ["/usr/local/bin/bc250-cleanup-target"]="0:0:755"
   ["/etc/skel/Desktop/install-system.desktop"]="0:0:755"
   ["/etc/sudoers.d"]="0:0:750"
   ["/etc/sudoers.d/deck"]="0:0:440"

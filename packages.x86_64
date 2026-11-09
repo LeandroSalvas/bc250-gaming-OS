@@ -48,7 +48,6 @@ pacman-mirrorlist
 cachyos-keyring
 cachyos-mirrorlist
 cachyos-v3-mirrorlist
-cachyos-v4-mirrorlist
 
 # --- KDE Plasma 6 ---
 plasma-meta

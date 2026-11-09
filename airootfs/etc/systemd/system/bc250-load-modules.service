@@ -1,7 +1,7 @@
 [Unit]
 Description=BC-250 extra kernel modules (nct6687)
 After=systemd-modules-load.service
-Before=display-manager.service
+Before=display-manager.service sddm.service
 
 [Service]
 Type=oneshot

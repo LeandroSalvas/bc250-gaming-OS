@@ -42,8 +42,11 @@ BC-250 já vêm pré-instalados *out-of-the-box*.
   `bc250-dual-audio`, `bc250-paccache-cleanup`, `bc250-vcn-fw`.
 
 ### Instalador
-- **cachyos-calamares** com configuração online (`calamares/settings.conf`,
-  copiada para `/etc/calamares/settings.conf` no Live).
+- **cachyos-calamares** com instalação **offline** via `unpackfs`: copia o
+  SquashFS do Live para o disco, sem baixar pacotes.
+- Configs customizadas em `airootfs/etc/calamares/modules/bc250-*.conf`
+  (ESP em `/boot/efi`, GRUB, SDDM, serviços) e script
+  `bc250-cleanup-target`, que remove os artefatos do Live do sistema instalado.
 
 ## Estrutura do Repositório
 
@@ -54,13 +57,17 @@ BC-250 já vêm pré-instalados *out-of-the-box*.
 ├── pacman.conf                   # pacman.conf usado no BUILD (SigLevel=Never)
 ├── airootfs/                     # Overlay do sistema Live
 │   ├── etc/
-│   │   ├── calamares/settings.conf
+│   │   ├── calamares/
+│   │   │   ├── settings.conf      # sequência offline (UnpackFS)
+│   │   │   └── modules/bc250-*.conf
+│   │   ├── modprobe.d/amdgpu.conf # ip_block_mask
 │   │   ├── pacman.conf           # pacman.conf do sistema Live/instalado
 │   │   ├── sddm.conf.d/          # autologin
 │   │   ├── systemd/system/       # unidades e symlinks
 │   │   ├── sudoers.d/deck        # NOPASSWD no Live
 │   │   └── skel/                 # Fish, KDE, atalho "Instalar Agora!"
-│   └── usr/local/bin/            # bc250-live-setup, bc250-load-modules, ...
+│   └── usr/local/bin/            # bc250-live-setup, bc250-load-modules,
+│                                 # bc250-cleanup-target, ...
 ├── efiboot/                      # systemd-boot (UEFI)
 ├── grub/                         # GRUB
 ├── syslinux/                     # syslinux (BIOS)
@@ -129,11 +136,14 @@ Exemplos:
 
 ### Assinatura de pacotes
 
-- **Build:** o `pacman.conf` do build usa `SigLevel = Never`, porque o keyring
-  do chroot é populado no boot do Live.
-- **Sistema Live/instalado:** usa `airootfs/etc/pacman.conf` com
+- **Build:** o `pacman.conf` do build usa `SigLevel = Never`.
+- **Sistema Live:** usa `airootfs/etc/pacman.conf` com
   `SigLevel = Required DatabaseOptional`; o `pacman-init.service` executa
-  `pacman-key --init` e `pacman-key --populate` no primeiro boot.
+  `pacman-key --init` e `pacman-key --populate` no boot do Live.
+- **Sistema instalado (offline):** o script `bc250-cleanup-target` recria o
+  keyring no destino com `pacman-key --init` e
+  `pacman-key --populate archlinux cachyos`; a instalação não precisa de
+  internet.
 
 ## Teste em QEMU
 
@@ -141,15 +151,21 @@ Exemplos:
 # Instale o QEMU e o firmware UEFI (uma vez)
 sudo pacman -S --needed qemu-full edk2-ovmf
 
-# Rode a ISO mais recente em out/
+# Rode a ISO mais recente em out/ (cria um disco de teste de 24G)
 ./test-qemu.sh
 
 # Ou informe um caminho específico
 ./test-qemu.sh out/bc250-gaming-2026.11.09-x86_64.iso
+
+# Use outro disco de teste
+BC250_QEMU_DISK=/caminho/para/teste.qcow2 ./test-qemu.sh
 ```
 
 O script usa **KVM** quando `/dev/kvm` está acessível (senão cai para TCG),
-tenta UEFI via OVMF (senão SeaBIOS) e usa 4 GB de RAM / 4 CPUs.
+tenta UEFI via OVMF (senão SeaBIOS), usa 4 GB de RAM / 4 CPUs e anexa um disco
+virtio de 24 GB para testar o instalador offline. Apague o arquivo do disco
+(`.build/qemu/bc250-test.qcow2`) para começar do zero.
+
 Para habilitar KVM, adicione seu usuário ao grupo `kvm`:
 
 ```bash
@@ -166,6 +182,7 @@ sudo usermod -aG kvm "$USER"
   `/etc/sudoers.d/deck`).
 - Atalho **“Instalar Agora!”** na área de trabalho e no menu de aplicativos.
 - Aviso de boas-vindas (`bc250-welcome`) é iniciado junto com o KDE.
+- Instalação **offline**: o Calamares copia o SquashFS do Live (sem internet).
 
 ## Observações sobre a BC-250
 
@@ -176,6 +193,10 @@ sudo usermod -aG kvm "$USER"
 - Os repositórios CachyOS (`cachyos-v3`, `cachyos-extra-v3`,
   `cachyos-core-v3`) são otimizados para x86-64-v3, suportado pela CPU Zen2
   da BC-250.
+- A ISO **não** usa `cachyos-v4-mirrorlist`: Zen2 (Ariel/Oberon) não suporta
+  AVX-512/x86-64-v4, e pacotes v4 causariam SIGILL.
+- O `amdgpu` é carregado com `ip_block_mask=0xffffffff` via
+  `/etc/modprobe.d/amdgpu.conf`.
 
 ## Créditos e Agradecimentos
 

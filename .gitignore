@@ -2,20 +2,21 @@
 *.iso
 work/
 out/
+localrepo/
+.build/
 *.tar.zst
 *.pkg.tar.zst
 *.db.tar.gz
 *.files.tar.gz
-localrepo/
-.build/aur/
-pkgbuilds/*/*/*.pkg.tar.zst
-pkgbuilds/*/*/*.log
+
+# Diretórios de build do makepkg dentro de pkgbuilds/
+pkgbuilds/*/src/
+pkgbuilds/*/pkg/
+pkgbuilds/*/*/
+
+# Logs e temporários
 *.log
 *.tmp
-
-# Apenas rastrear PKGBUILDs fontes (os binários já estão em localrepo)
-!.build/PKGBUILDs
-!.build/aur
 
 # Cache/lock do pacman
 .pacman-db.lock
