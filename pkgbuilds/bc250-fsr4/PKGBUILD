@@ -1,0 +1,42 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+pkgname=bc250-fsr4
+pkgver=1.0
+pkgrel=1
+pkgdesc="FSR4 para APU AMD BC-250 (morreazasanchez fork)"
+arch=('x86_64')
+url="https://github.com/dmorazasanchez/bc250-fsr4"
+license=('MIT')
+
+depends=(
+    'mesa'
+    'linux'
+    'linux-headers'
+)
+
+makedepends=(
+    'git'
+    'cmake'
+)
+
+source=(
+    "git+https://github.com/dmorazasanchez/bc250-fsr4.git"
+)
+
+sha256sums=(
+    'SKIP'
+)
+
+package() {
+    cd "${srcdir}/bc250-fsr4"
+    
+    mkdir -p build
+    cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/usr
+    make DESTDIR="${pkgdir}" install
+    
+    # Install shader files
+    mkdir -p "${pkgdir}/usr/share/vulkan/fsr4"
+    install -Dm644 shaders/* "${pkgdir}/usr/share/vulkan/fsr4/"
+    
+    # Install license
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

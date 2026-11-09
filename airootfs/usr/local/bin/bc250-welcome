@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# ============================================================
+# BC-250 Gaming ISO - diálogo de boas-vindas
+# Oferece instalar o sistema via Calamares.
+# ============================================================
+set -u
+
+# Executa apenas no ambiente Live (archiso). Após a instalação, o /etc/skel é
+# copiado para o novo usuário; sem esta checagem o instalador seria oferecido
+# novamente no sistema instalado.
+if [[ ! -d /run/archiso && ! -e /etc/bc250-live-setup.done ]]; then
+    exit 0
+fi
+
+TITLE="BC-250 Gaming"
+MSG="Bem-vindo ao BC-250 Gaming!\n\nEste é o ambiente Live.\nDeseja instalar o sistema agora?"
+
+if command -v kdialog >/dev/null 2>&1; then
+    if kdialog --title "${TITLE}" --yesno "${MSG}" \
+        --yes-label "Instalar Agora!" --no-label "Continuar no Live"; then
+        exec calamares
+    fi
+else
+    # Sem kdialog, não inicia o instalador automaticamente: o atalho
+    # "Instalar Agora!" na área de trabalho continua disponível.
+    exit 0
+fi
+
+exit 0

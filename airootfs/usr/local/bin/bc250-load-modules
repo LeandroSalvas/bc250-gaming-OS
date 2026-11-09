@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# ============================================================
+# BC-250 Gaming ISO - carrega módulos extras (nct6687)
+# ============================================================
+set -u
+
+# Reindexa módulos para incluir o nct6687 pré-compilado no overlay
+depmod -a 2>/dev/null || true
+
+# Super I/O Nuvoton NCT6687D (sensores/fans)
+modprobe nct6687 2>/dev/null || true
+
+exit 0

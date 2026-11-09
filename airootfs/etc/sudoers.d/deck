@@ -1,0 +1,5 @@
+# BC-250 Gaming ISO - usuário live "deck"
+# ATENÇÃO: sudo sem senha apenas para o ambiente Live.
+# Ajuste/remova esta regra no sistema instalado, se desejar.
+
+deck ALL=(ALL:ALL) NOPASSWD: ALL

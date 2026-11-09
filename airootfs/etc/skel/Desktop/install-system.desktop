@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Instalar Agora!
+Comment=Instalar o sistema BC-250
+Exec=calamares
+Icon=package-install
+Type=Application
+Categories=System;Installer
+X-KDE-StartupNotify=false

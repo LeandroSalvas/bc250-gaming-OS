@@ -1,0 +1,41 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+pkgname=bc250-acpi-fix
+pkgver=1.0
+pkgrel=1
+pkgdesc="Patch ACPI para estabilidade em APU AMD BC-250"
+arch=('x86_64')
+url="https://github.com/e-tho/bc250-acpi-fix"
+license=('GPL2')
+
+depends=(
+    'linux'
+    'linux-headers'
+)
+
+makedepends=(
+    'git'
+    'dtc'
+)
+
+source=(
+    "git+https://github.com/e-tho/bc250-acpi-fix.git"
+)
+
+sha256sums=(
+    'SKIP'
+)
+
+package() {
+    cd "${srcdir}/bc250-acpi-fix"
+    
+    # Install DSDT/SSDT patches
+    mkdir -p "${pkgdir}/usr/share/bc250-acpi-fix"
+    cp -r dsdt/ "${pkgdir}/usr/share/bc250-acpi-fix/"
+    cp -r ssdt/ "${pkgdir}/usr/share/bc250-acpi-fix/"
+    
+    # Install apply script
+    install -Dm755 apply-acpi-patch.sh "${pkgdir}/usr/bin/bc250-apply-acpi-patch"
+    
+    # Install license
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

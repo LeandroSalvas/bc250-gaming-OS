@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=BC-250 Welcome
+Comment=Boas-vindas e instalador BC-250
+Exec=/usr/local/bin/bc250-welcome
+Icon=calamares
+Terminal=false
+X-KDE-autostart-after=panel
+X-GNOME-Autostart-enabled=true
+OnlyShowIn=KDE;

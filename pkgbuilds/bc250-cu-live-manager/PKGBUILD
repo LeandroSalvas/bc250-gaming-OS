@@ -1,0 +1,22 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+# Gerenciador interativo de WGP/CU em tempo de execução (requer umr para acesso
+# aos registradores). O script não é executado automaticamente.
+pkgname=bc250-cu-live-manager
+pkgver=1.0
+pkgrel=1
+pkgdesc="Gerenciador interativo de WGP/CU para AMD BC-250 (gfx1013)"
+arch=('x86_64')
+url="https://github.com/WinnieLV/bc250-cu-live-manager"
+license=('GPL-2.0-only')
+depends=('bash')
+optdepends=('umr: acesso aos registradores AMDGPU')
+makedepends=('git')
+source=("git+https://github.com/WinnieLV/bc250-cu-live-manager.git")
+sha256sums=('SKIP')
+
+package() {
+    cd "${srcdir}/bc250-cu-live-manager"
+
+    install -Dm755 bc250-cu-live-manager.sh "${pkgdir}/usr/bin/bc250-cu-live-manager"
+    install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+}

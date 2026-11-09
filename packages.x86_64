@@ -1,0 +1,118 @@
+# ============================================================
+# Pacotes do BC-250 Gaming ISO
+# Repos: Arch (core/extra/multilib) + CachyOS + bc250-cachyos
+# ============================================================
+
+# --- Base do sistema ---
+base
+linux-cachyos-bc250
+linux-cachyos-bc250-headers
+linux-firmware
+amd-ucode
+mkinitcpio
+mkinitcpio-archiso
+arch-install-scripts
+btrfs-progs
+dosfstools
+e2fsprogs
+exfatprogs
+ntfs-3g
+gptfdisk
+parted
+efibootmgr
+grub
+syslinux
+edk2-shell
+memtest86+
+memtest86+-efi
+sudo
+nano
+vim
+networkmanager
+wpa_supplicant
+openssh
+curl
+wget
+git
+htop
+btop
+man-db
+man-pages
+less
+rsync
+fish
+bash-completion
+reflector
+pacman-contrib
+pacman-mirrorlist
+cachyos-keyring
+cachyos-mirrorlist
+cachyos-v3-mirrorlist
+cachyos-v4-mirrorlist
+
+# --- KDE Plasma 6 ---
+plasma-meta
+sddm
+sddm-kcm
+konsole
+dolphin
+kate
+ark
+gwenview
+spectacle
+kinfocenter
+kdialog
+kde-gtk-config
+breeze
+breeze-gtk
+noto-fonts
+noto-fonts-emoji
+ttf-dejavu
+ttf-liberation
+plasma-workspace-wallpapers
+
+# --- Audio (PipeWire) ---
+pipewire
+pipewire-pulse
+pipewire-alsa
+pipewire-jack
+wireplumber
+alsa-utils
+alsa-plugins
+pavucontrol
+
+# --- Stack de jogos ---
+steam
+gamemode
+lib32-gamemode
+mangohud
+lib32-mangohud
+gamescope
+vulkan-radeon
+lib32-vulkan-radeon
+mesa
+lib32-mesa
+vulkan-icd-loader
+lib32-vulkan-icd-loader
+vulkan-tools
+
+# --- BC-250 / CachyOS ---
+proton-cachyos-native-bc250
+bc250-fixes
+bc250-cec
+bc250-dual-audio
+bc250-paccache-cleanup
+bc250-vcn-fw
+
+# --- Instalador ---
+cachyos-calamares
+python-pip
+openssl
+ca-certificates
+
+# --- Extras de desktop ---
+firefox
+bluez
+bluez-utils
+xdg-utils
+xdg-user-dirs

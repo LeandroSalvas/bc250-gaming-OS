@@ -1,0 +1,42 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+pkgname=bc250-fsr4-fork
+pkgver=1.0
+pkgrel=1
+pkgdesc="FSR4 Fork para APU AMD BC-250 (daniel-h-0 fork)"
+arch=('x86_64')
+url="https://github.com/daniel-h-0/bc250-fsr4-fork"
+license=('MIT')
+
+depends=(
+    'mesa'
+    'linux'
+    'linux-headers'
+)
+
+makedepends=(
+    'git'
+    'cmake'
+)
+
+source=(
+    "git+https://github.com/daniel-h-0/bc250-fsr4-fork.git"
+)
+
+sha256sums=(
+    'SKIP'
+)
+
+package() {
+    cd "${srcdir}/bc250-fsr4-fork"
+    
+    mkdir -p build
+    cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/usr
+    make DESTDIR="${pkgdir}" install
+    
+    # Install shader files
+    mkdir -p "${pkgdir}/usr/share/vulkan/fsr4-fork"
+    install -Dm644 shaders/* "${pkgdir}/usr/share/vulkan/fsr4-fork/"
+    
+    # Install license
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

@@ -1,0 +1,48 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+pkgname=bc250-telemetry
+pkgver=1.0
+pkgrel=1
+pkgdesc="Módulo de telemetria para APU AMD BC-250"
+arch=('x86_64')
+url="https://github.com/onlinermm/BC250-Telemetry"
+license=('GPL2')
+
+depends=(
+    'curl'
+    'json-c'
+    'linux'
+    'linux-headers'
+)
+
+makedepends=(
+    'git'
+    'cmake'
+)
+
+source=(
+    "git+https://github.com/onlinermm/BC250-Telemetry.git"
+)
+
+sha256sums=(
+    'SKIP'
+)
+
+prepare() {
+    cd "${srcdir}/BC250-Telemetry"
+    mkdir -p build
+}
+
+package() {
+    cd "${srcdir}/BC250-Telemetry/build"
+    
+    cmake .. -DCMAKE_INSTALL_PREFIX:PATH=/usr
+    make DESTDIR="${pkgdir}" install
+    
+    # Install configuration
+    mkdir -p "${pkgdir}/etc/bc250"
+    install -Dm644 telemetry.conf "${pkgdir}/etc/bc250/telemetry.conf"
+    
+    # Install systemd service
+    mkdir -p "${pkgdir}/usr/lib/systemd/system"
+    install -Dm644 bc250-telemetry.service "${pkgdir}/usr/lib/systemd/system/bc250-telemetry.service"
+}

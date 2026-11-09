@@ -1,0 +1,26 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+# Scripts e patch de referência para reativar as 40 CUs na APU AMD BC-250.
+# Nada é aplicado automaticamente: o usuário executa os scripts manualmente.
+pkgname=bc250-40cu-unlock
+pkgver=1.0
+pkgrel=1
+pkgdesc="Scripts e patch para desbloquear 40 CUs na APU AMD BC-250 (gfx1013)"
+arch=('x86_64')
+url="https://github.com/duggasco/bc250-40cu-unlock"
+license=('GPL-2.0-only')
+depends=('bash')
+makedepends=('git')
+source=("git+https://github.com/duggasco/bc250-40cu-unlock.git")
+sha256sums=('SKIP')
+
+package() {
+    cd "${srcdir}/bc250-40cu-unlock"
+
+    install -d "${pkgdir}/usr/bin"
+    install -m755 scripts/*.sh "${pkgdir}/usr/bin/"
+
+    install -d "${pkgdir}/usr/share/bc250-40cu-unlock"
+    cp -r patch docs "${pkgdir}/usr/share/bc250-40cu-unlock/"
+
+    install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+}

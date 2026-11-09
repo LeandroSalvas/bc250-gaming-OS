@@ -1,0 +1,41 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+pkgname=bc250-efi-core-unlock
+pkgver=1.0
+pkgrel=1
+pkgdesc="EFI Core Unlock para APU AMD BC-250 (Hexxeh)"
+arch=('x86_64')
+url="https://github.com/Hexxeh/bc250-efi-core-unlock"
+license=('GPL2')
+
+depends=(
+    'linux'
+    'linux-headers'
+)
+
+makedepends=(
+    'git'
+    'make'
+)
+
+source=(
+    "git+https://github.com/Hexxeh/bc250-efi-core-unlock.git"
+)
+
+sha256sums=(
+    'SKIP'
+)
+
+package() {
+    cd "${srcdir}/bc250-efi-core-unlock"
+    
+    # Install EFI core unlock utility
+    mkdir -p "${pkgdir}/usr/local/bin"
+    install -Dm755 bc250-efi-core-unlock "${pkgdir}/usr/local/bin/bc250-efi-core-unlock"
+    
+    # Install EFI scripts
+    mkdir -p "${pkgdir}/usr/share/bc250-efi-core-unlock"
+    cp -r efi/ "${pkgdir}/usr/share/bc250-efi-core-unlock/"
+    
+    # Install license
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

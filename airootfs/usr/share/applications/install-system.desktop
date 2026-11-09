@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Instalar Agora!
+Comment=Instalar o sistema BC-250 Gaming
+Exec=calamares
+Icon=calamares
+Type=Application
+Categories=System;Installer;
+Terminal=false
+X-KDE-StartupNotify=false

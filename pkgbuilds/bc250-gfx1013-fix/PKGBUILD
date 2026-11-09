@@ -1,0 +1,41 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+pkgname=bc250-gfx1013-fix
+pkgver=1.0
+pkgrel=1
+pkgdesc="Patch LLVM/Mesa para suporte gfx1013 (BC-250 APU)"
+arch=('x86_64')
+url="https://github.com/DryhoppedIPA/bc250-gfx1013-fix"
+license=('MIT')
+
+depends=(
+    'llvm'
+    'mesa'
+    'linux'
+)
+
+makedepends=(
+    'git'
+)
+
+source=(
+    "git+https://github.com/DryhoppedIPA/bc250-gfx1013-fix.git"
+)
+
+sha256sums=(
+    'SKIP'
+)
+
+package() {
+    cd "${srcdir}/bc250-gfx1013-fix"
+    
+    # Install the patch files
+    mkdir -p "${pkgdir}/usr/share/bc250-gfx1013-fix"
+    cp -r patch/ "${pkgdir}/usr/share/bc250-gfx1013-fix/"
+    cp -r src/ "${pkgdir}/usr/share/bc250-gfx1013-fix/"
+    
+    # Install license
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+    
+    # Create wrapper script
+    install -Dm755 "${srcdir}/bc250-gfx1013-fix/scripts/apply-patch.sh" "${pkgdir}/usr/bin/bc250-apply-gfx1013-patch"
+}

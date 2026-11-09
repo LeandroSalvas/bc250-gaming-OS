@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+# ============================================================
+# BC-250 Gaming ISO - criação do usuário live "deck"
+# Executado no boot, antes do display-manager (SDDM).
+# ============================================================
+set -euo pipefail
+
+# Segurança: só cria o usuário live quando estiver rodando do ISO (archiso).
+# Evita criar o usuário "deck" (com sudo NOPASSWD) num sistema instalado,
+# caso esta unidade acabe sendo preservada por uma instalação offline.
+if [[ ! -d /run/archiso ]]; then
+    exit 0
+fi
+
+USER_NAME="deck"
+USER_SHELL="/usr/bin/fish"
+WANTED_GROUPS="wheel,video,render,audio,storage,optical,network,power,rfkill,lp,scanner,kvm,users"
+
+# Cria grupos ausentes (ex.: kvm em ambientes sem QEMU) e monta a lista final
+# apenas com grupos realmente existentes, para o useradd não falhar.
+USER_GROUPS=""
+IFS=',' read -r -a wanted <<< "${WANTED_GROUPS}"
+for g in "${wanted[@]}"; do
+    if ! getent group "${g}" >/dev/null 2>&1; then
+        groupadd -r "${g}" 2>/dev/null || true
+    fi
+    if getent group "${g}" >/dev/null 2>&1; then
+        USER_GROUPS="${USER_GROUPS:+${USER_GROUPS},}${g}"
+    fi
+done
+
+if ! id "${USER_NAME}" >/dev/null 2>&1; then
+    useradd -m -G "${USER_GROUPS}" -s "${USER_SHELL}" \
+        -c "BC-250 Live User" "${USER_NAME}"
+fi
+
+# Garante a participação em todos os grupos (mesmo se o usuário já existir)
+IFS=',' read -r -a groups <<< "${USER_GROUPS}"
+for g in "${groups[@]}"; do
+    if getent group "${g}" >/dev/null 2>&1; then
+        usermod -aG "${g}" "${USER_NAME}" || true
+    fi
+done
+
+# Garante home populado com /etc/skel
+if [[ ! -e "/home/${USER_NAME}/.config" ]]; then
+    cp -a /etc/skel/. "/home/${USER_NAME}/"
+fi
+chown -R "${USER_NAME}:${USER_NAME}" "/home/${USER_NAME}"
+chmod 700 "/home/${USER_NAME}"
+
+# Senha do usuário live (documentada): deck
+echo "${USER_NAME}:${USER_NAME}" | chpasswd
+
+# Gera locales (pt_BR/en_US) antes da sessão gráfica
+if [[ -f /etc/locale.gen ]]; then
+    locale-gen || true
+fi
+
+exit 0

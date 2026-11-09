@@ -1,0 +1,21 @@
+# Maintainer: Projeto BC-250 <bc250@projetobc250.local>
+# Script Python que reativa os 2 núcleos de CPU desabilitados (6c/12t -> 8c/16t).
+pkgname=bc250-core-unlock
+pkgver=1.0
+pkgrel=1
+pkgdesc="Reativa os 2 núcleos de CPU desabilitados na APU AMD BC-250"
+arch=('x86_64')
+url="https://github.com/rw-r-r-0644/bc250-core-unlock"
+license=('GPL-2.0-only')
+depends=('python')
+makedepends=('git')
+source=("git+https://github.com/rw-r-r-0644/bc250-core-unlock.git")
+sha256sums=('SKIP')
+
+package() {
+    cd "${srcdir}/bc250-core-unlock"
+
+    install -Dm755 bc250-unlock-cores.py "${pkgdir}/usr/bin/bc250-unlock-cores"
+    install -Dm644 README.md "${pkgdir}/usr/share/doc/${pkgname}/README.md"
+    install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+}

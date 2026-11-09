@@ -1,0 +1,15 @@
+[Unit]
+Description=BC-250 Live user setup (deck)
+DefaultDependencies=no
+After=systemd-sysusers.service local-fs.target
+Before=display-manager.service sddm.service systemd-user-sessions.service
+ConditionPathExists=!/etc/bc250-live-setup.done
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/bc250-live-setup
+ExecStartPost=/usr/bin/touch /etc/bc250-live-setup.done
+
+[Install]
+WantedBy=multi-user.target

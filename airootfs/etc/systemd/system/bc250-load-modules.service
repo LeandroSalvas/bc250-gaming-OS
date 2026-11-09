@@ -1,0 +1,12 @@
+[Unit]
+Description=BC-250 extra kernel modules (nct6687)
+After=systemd-modules-load.service
+Before=display-manager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/bc250-load-modules
+
+[Install]
+WantedBy=multi-user.target

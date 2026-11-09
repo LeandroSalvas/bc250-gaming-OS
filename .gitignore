@@ -1,0 +1,21 @@
+# Ignorar arquivos de ISO e builds (não fazer commit)
+*.iso
+work/
+out/
+*.tar.zst
+*.pkg.tar.zst
+*.db.tar.gz
+*.files.tar.gz
+localrepo/
+.build/aur/
+pkgbuilds/*/*/*.pkg.tar.zst
+pkgbuilds/*/*/*.log
+*.log
+*.tmp
+
+# Apenas rastrear PKGBUILDs fontes (os binários já estão em localrepo)
+!.build/PKGBUILDs
+!.build/aur
+
+# Cache/lock do pacman
+.pacman-db.lock
